@@ -9,10 +9,10 @@ namespace Application.Services
 {
     public class ReadSensorDataService : IReadSensorDataService
     {
-        private readonly IReadingRepository _repository;
+        private readonly IReadSensorDataRepository _repository;
         private readonly ILogger<ReadSensorDataService> _logger;
 
-        public ReadSensorDataService(IReadingRepository repository, ILogger<ReadSensorDataService> logger)
+        public ReadSensorDataService(IReadSensorDataRepository repository, ILogger<ReadSensorDataService> logger)
         {
             _repository = repository;
             _logger = logger;
@@ -88,7 +88,7 @@ namespace Application.Services
                 deviceId, metric, from, to, cancellationToken);
 
             if (!readings.Any())
-                return Enumerable.Empty<AggregationResultDto>();
+                return [];
 
             // گروه‌بندی بر اساس بازه زمانی
             var grouped = readings

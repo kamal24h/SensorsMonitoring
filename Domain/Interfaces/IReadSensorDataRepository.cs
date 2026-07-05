@@ -1,0 +1,16 @@
+﻿using Domain.Entities;
+
+namespace Domain.Interfaces;
+
+public interface IReadSensorDataRepository
+{
+    Task AddAsync(Reading reading, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Reading>> GetByDeviceAndMetricAsync(
+        string deviceId,
+        string metric,
+        DateTime from,
+        DateTime to,
+        CancellationToken cancellationToken = default);
+    Task<ProcessedReadings> GetProcessedStatsAsync(CancellationToken cancellationToken = default);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+}
