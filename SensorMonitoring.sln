@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SensorMonitoring", "SensorMonitoring\SensorMonitoring.csproj", "{79807DD0-3F66-4AA7-9E55-820033259A72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{D91E3C82-4248-46EF-93E4-B99C00CEBBD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{3003EA42-CA02-49E2-ABD7-722BD7C33D58}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79807DD0-3F66-4AA7-9E55-820033259A72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79807DD0-3F66-4AA7-9E55-820033259A72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79807DD0-3F66-4AA7-9E55-820033259A72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79807DD0-3F66-4AA7-9E55-820033259A72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D91E3C82-4248-46EF-93E4-B99C00CEBBD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D91E3C82-4248-46EF-93E4-B99C00CEBBD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D91E3C82-4248-46EF-93E4-B99C00CEBBD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D91E3C82-4248-46EF-93E4-B99C00CEBBD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3003EA42-CA02-49E2-ABD7-722BD7C33D58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3003EA42-CA02-49E2-ABD7-722BD7C33D58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3003EA42-CA02-49E2-ABD7-722BD7C33D58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3003EA42-CA02-49E2-ABD7-722BD7C33D58}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
