@@ -1,6 +1,6 @@
 @SensorMonitoring_HostAddress = http://localhost:5053
 
-GET {{SensorMonitoring_HostAddress}}/weatherforecast/
+GET {{SensorMonitoring_HostAddress}}/sensor/
 Accept: application/json
 
 ###

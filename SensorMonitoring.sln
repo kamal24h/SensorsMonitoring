@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SensorMonitoring", "SensorMonitoring\SensorMonitoring.csproj", "{79807DD0-3F66-4AA7-9E55-820033259A72}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{79807DD0-3F66-4AA7-9E55-820033259A72}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{07CDE7F6-6D73-444E-A78B-87A11BB1B32E}"
 EndProject
@@ -12,8 +12,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{3003EA42-CA02-49E2-ABD7-722BD7C33D58}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "IntegrationTests\IntegrationTests.csproj", "{0E600F7E-F701-4CDD-A355-82F6158B8BC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,11 +38,7 @@ Global
 		{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0E600F7E-F701-4CDD-A355-82F6158B8BC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E600F7E-F701-4CDD-A355-82F6158B8BC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0E600F7E-F701-4CDD-A355-82F6158B8BC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0E600F7E-F701-4CDD-A355-82F6158B8BC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8172ECB-3749-4FC0-BE94-D52C87FDB1EF}.Release|Any CPU.Build.0 = Release|Any CPU		
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

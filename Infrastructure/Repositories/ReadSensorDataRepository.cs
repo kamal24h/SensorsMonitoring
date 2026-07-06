@@ -303,12 +303,14 @@ namespace Infrastructure.Repositories
                 try
                 {
                     // پاک کردن تمام داده‌ها از دیتابیس
-                    await _context.Readings.ExecuteDeleteAsync(cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
 
-                    // ریست کردن آمار
-                    _stats.Reset();
-                    _isStatsUpdated = true;
+                    var allReadings = await _context.Readings.ToListAsync(cancellationToken);
+                    _context.Readings.RemoveRange(allReadings);
+
+                    var stats = await _context.ProcessedStats.FirstOrDefaultAsync();
+                    if(stats != null)
+                        _context.ProcessedStats.Remove(stats);
+                    await _context.SaveChangesAsync(cancellationToken);
 
                     _logger.LogInformation("All statistics and data have been reset");
                 }
