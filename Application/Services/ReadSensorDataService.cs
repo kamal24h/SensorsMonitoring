@@ -23,10 +23,13 @@ namespace Application.Services
             _logger.LogInformation("Starting file processing: {FilePath}", filePath);
 
             var processed = new ProcessedReadings();
-            var lines = await File.ReadAllLinesAsync(filePath, cancellationToken);
+            //var lines = await File.ReadAllLinesAsync(filePath, cancellationToken);
 
-            foreach (var line in lines)
+            await foreach (var line in File.ReadLinesAsync(filePath, cancellationToken))
             {
+
+            //    foreach (var line in lines)
+            //{
                 try
                 {
                     var dto = JsonSerializer.Deserialize<ReadingDto>(line);
@@ -34,6 +37,13 @@ namespace Application.Services
                     {
                         processed.IncrementInvalidRecords();
                         _logger.LogWarning("Invalid JSON format: {Line}", line);
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(dto.DeviceId) ||
+                        string.IsNullOrWhiteSpace(dto.Metric))
+                    {
+                        processed.IncrementInvalidRecords();
                         continue;
                     }
 
@@ -51,7 +61,7 @@ namespace Application.Services
                     }
                     else
                     {
-                        _logger.LogDebug("Duplicate reading detected: {ReadingId}", reading.Id);
+                        _logger.LogDebug("Duplicate reading detected: {ReadingIdentity}", reading.Id);
                     }
                 }
                 catch (JsonException ex)
@@ -71,7 +81,8 @@ namespace Application.Services
                 }
             }
 
-            await _repository.SaveChangesAsync(cancellationToken);
+            // todo: for debug, remove! 
+            var result = await _repository.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("File processing completed. Total: {Total}, Stored: {Stored}, Duplicates: {Duplicates}, Invalid: {Invalid}",
                 processed.TotalLines, processed.Readings.Count, processed.DuplicatesRemoved, processed.InvalidRecords);
         }

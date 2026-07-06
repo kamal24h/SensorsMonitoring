@@ -2,25 +2,26 @@
 
 public class ProcessedReadings
 {
-    private readonly HashSet<Reading> _readings = [];
+    // برای تشخیص رکوردهای تکراری
+    private readonly HashSet<ReadingIdentity> _identities = [];
 
-    public IReadOnlyCollection<Reading> Readings => _readings.ToList().AsReadOnly();
+    // برای نگهداری رکوردهای معتبر
+    private readonly List<Reading> _readings = [];
+
+    public IReadOnlyCollection<Reading> Readings => _readings.AsReadOnly();
+
     public int TotalLines { get; private set; }
     public int DuplicatesRemoved { get; private set; }
     public int InvalidRecords { get; private set; }
 
-    public ProcessedReadings()
-    {
-        TotalLines = 0;
-        DuplicatesRemoved = 0;
-        InvalidRecords = 0;
-    }
-
     public bool TryAddReading(Reading reading)
     {
+        ArgumentNullException.ThrowIfNull(reading);
+
         TotalLines++;
 
-        if (_readings.Contains(reading))
+        // HashSet.Add اگر قبلاً وجود داشته باشد false برمی‌گرداند
+        if (!_identities.Add(reading.Id))
         {
             DuplicatesRemoved++;
             return false;
@@ -31,5 +32,8 @@ public class ProcessedReadings
     }
 
     public void IncrementInvalidRecords()
-        => InvalidRecords++;
+    {
+        InvalidRecords++;
+        TotalLines++;
+    }
 }

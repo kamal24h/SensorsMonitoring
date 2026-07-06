@@ -1,28 +1,49 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
+using Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class ReadSensorDataRepository : IReadSensorDataRepository
+    public class ReadSensorDataRepository(SensorDbContext context) : IReadSensorDataRepository
     {
-        public Task AddAsync(Reading reading, CancellationToken cancellationToken = default)
+        private readonly SensorDbContext _context = context;
+        private readonly ProcessedReadings _stats = new();
+
+        public async Task AddAsync(Reading reading, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            await _context.Readings.AddAsync(reading, cancellationToken);
+            _stats.TryAddReading(reading);
         }
 
-        public Task<IEnumerable<Reading>> GetByDeviceAndMetricAsync(string deviceId, string metric, DateTime from, DateTime to, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Reading>> GetByDeviceAndMetricAsync(
+            string deviceId,
+            string metric,
+            DateTime from,
+            DateTime to,
+            CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return await _context.Readings
+                .Where(r =>
+                    r.Id.DeviceId == deviceId &&
+                    r.Id.Metric == metric &&
+                    r.Id.Timestamp >= from &&
+                    r.Id.Timestamp <= to)
+                .OrderBy(r => r.Id.Timestamp)
+                .ToListAsync(cancellationToken);
         }
 
-        public Task<ProcessedReadings> GetProcessedStatsAsync(CancellationToken cancellationToken = default)
+        public async Task<ProcessedReadings> GetProcessedStatsAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // بخاطر استفاده از بانک اطلاعاتی InMemory 
+            return _stats;
         }
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var res = await _context.SaveChangesAsync(cancellationToken);
+            return res;
         }
     }
 }
+
