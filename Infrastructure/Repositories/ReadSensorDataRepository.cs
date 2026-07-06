@@ -23,19 +23,22 @@ namespace Infrastructure.Repositories
             DateTime to,
             CancellationToken cancellationToken = default)
         {
-            return await _context.Readings
+            var result = await _context.Readings
                 .Where(r =>
-                    r.Id.DeviceId == deviceId &&
-                    r.Id.Metric == metric &&
-                    r.Id.Timestamp >= from &&
-                    r.Id.Timestamp <= to)
-                .OrderBy(r => r.Id.Timestamp)
+                    r.DeviceId == deviceId &&
+                    r.Metric == metric &&
+                    r.Timestamp >= from &&
+                    r.Timestamp <= to)
+                .OrderBy(r => r.Timestamp)
                 .ToListAsync(cancellationToken);
+
+            return result;
         }
 
         public async Task<ProcessedReadings> GetProcessedStatsAsync(CancellationToken cancellationToken = default)
         {
             // بخاطر استفاده از بانک اطلاعاتی InMemory 
+            // todo: not implemented yet
             return _stats;
         }
 

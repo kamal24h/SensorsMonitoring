@@ -33,6 +33,30 @@ namespace SensorMonitoring.Controllers
                 _logger.LogError(ex, "Error processing file");
                 return StatusCode(500, "Internal server error");
             }
-        }        
+        }
+
+        [HttpGet("aggregate")]
+        public async Task<IActionResult> GetAggregatedData( [FromQuery] string deviceId,
+            [FromQuery] string metric, [FromQuery] DateTime from,
+            [FromQuery] DateTime to, [FromQuery] int bucketSizeSeconds = 60)
+        {
+            try
+            {
+                if (from >= to)
+                    return BadRequest("'from' must be before 'to'");
+
+                if (bucketSizeSeconds <= 0)
+                    return BadRequest("Bucket size must be greater than 0");
+
+                var result = await _readingService.GetAggregatedDataAsync(deviceId, metric, from, to, bucketSizeSeconds);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting aggregated data");
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }
