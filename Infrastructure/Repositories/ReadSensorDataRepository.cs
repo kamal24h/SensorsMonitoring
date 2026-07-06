@@ -19,79 +19,6 @@ namespace Infrastructure.Repositories
         private readonly SemaphoreSlim _statsLock = new(1, 1);
         private bool _isStatsUpdated = false;
 
-        public async Task AddAsync1(Reading reading, CancellationToken cancellationToken = default)
-        {
-            await _context.Readings.AddAsync(reading, cancellationToken);
-            _stats.TryAddReading(reading);
-        }
-
-        public async Task<IEnumerable<Reading>> GetByDeviceAndMetricAsync1(
-            string deviceId, string metric, DateTime from, DateTime to,
-            CancellationToken cancellationToken = default)
-        {
-            var result = await _context.Readings
-                .Where(r =>
-                    r.DeviceId == deviceId &&
-                    r.Metric == metric &&
-                    r.Timestamp >= from &&
-                    r.Timestamp <= to)
-                .OrderBy(r => r.Timestamp)
-                .ToListAsync(cancellationToken);
-
-            return result;
-        }
-
-        public async Task<ProcessedReadings> GetProcessedStatsAsync1(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                // محاسبه آمار واقعی از دیتابیس
-                var totalLines = _stats.TotalLines; // یا از دیتابیس محاسبه کنیم
-
-                var readingsStored = await _context.Readings.CountAsync(cancellationToken);
-
-                // برای محاسبه duplicates و invalid باید منطق دیگری داشته باشیم
-                // در اینجا از _stats استفاده می‌کنیم چون در حین پردازش آپدیت می‌شود
-
-                // به‌روزرسانی stats با اطلاعات دیتابیس
-                return new ProcessedReadings
-                {
-                    // برای این کار باید یک سازنده یا متد در ProcessedReadings اضافه کنیم
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting stats");
-                throw;
-            }
-        }
-
-        public async Task<int> SaveChangesAsync1(CancellationToken cancellationToken = default)
-        {
-            var res = await _context.SaveChangesAsync(cancellationToken);
-            return res;
-        }
-
-        public async Task<int> SaveChangesAsync2(CancellationToken cancellationToken = default)
-        {
-            var result = 0;
-            try
-            {
-                result = await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Changes saved successfully. Stats: Total={Total}, Stored={Stored}, Duplicates={Duplicates}, Invalid={Invalid}",
-                    _stats.TotalLines,
-                    _stats.Readings.Count,
-                    _stats.DuplicatesRemoved,
-                    _stats.InvalidRecords);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving changes");
-                throw;
-            }
-            return result;
-        }
-
         public async Task AddAsync(Reading reading, CancellationToken cancellationToken = default)
         {
             if (reading == null)
@@ -213,57 +140,6 @@ namespace Infrastructure.Repositories
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting stats");
-                throw;
-            }
-        }
-
-        private async Task UpdateStatsFromDatabaseAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                _logger.LogInformation("Updating statistics from database...");
-
-                // دریافت تمام readings از دیتابیس
-                var allReadings = await _context.Readings
-                    .AsNoTracking()
-                    .ToListAsync(cancellationToken);
-
-                // بازسازی آمار
-                var newStats = new ProcessedReadings();
-                foreach (var reading in allReadings)
-                {
-                    newStats.TryAddReading(reading);
-                }
-
-                // کپی کردن آمار به _stats
-                // ابتدا وضعیت فعلی را حفظ می‌کنیم
-                var currentTotalLines = _stats.TotalLines;
-                var currentDuplicates = _stats.DuplicatesRemoved;
-                var currentInvalid = _stats.InvalidRecords;
-
-                // به‌روزرسانی با داده‌های جدید
-                _stats.Reset();
-                foreach (var reading in newStats.Readings)
-                {
-                    _stats.TryAddReading(reading);
-                }
-
-                // آمارهای محاسبه‌شده از دیتابیس را حفظ می‌کنیم
-                // اما توجه: تعداد کل خطوط، duplicates و invalid از دیتابیس قابل بازیابی نیست
-                // بنابراین آنها را از مقادیر قبلی نگه می‌داریم
-                _stats.TotalLines = currentTotalLines;
-                _stats.DuplicatesRemoved = currentDuplicates;
-                _stats.InvalidRecords = currentInvalid;
-
-                _logger.LogInformation("Stats updated: Total={Total}, Stored={Stored}, Duplicates={Duplicates}, Invalid={Invalid}",
-                    _stats.TotalLines,
-                    _stats.Readings.Count,
-                    _stats.DuplicatesRemoved,
-                    _stats.InvalidRecords);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating stats from database");
                 throw;
             }
         }

@@ -203,7 +203,7 @@ namespace Application.Services
             };
         }
 
-        private DateTime GetBucketStart(DateTime timestamp, DateTime rangeStart, int bucketSizeSeconds)
+        private static DateTime GetBucketStart(DateTime timestamp, DateTime rangeStart, int bucketSizeSeconds)
         {
             var elapsed = (timestamp - rangeStart).TotalSeconds;
             var bucketIndex = (int)(elapsed / bucketSizeSeconds);

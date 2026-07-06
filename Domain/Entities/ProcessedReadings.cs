@@ -20,7 +20,7 @@ public class ProcessedReadings
 
         TotalLines++;
 
-        // HashSet.Add اگر قبلاً وجود داشته باشد false برمی‌گرداند
+        // دستور HashSet.Add اگر قبلاً وجود داشته باشد false برمی‌گرداند 
         if (!_identities.Add(reading.Id))
         {
             DuplicatesRemoved++;
@@ -36,23 +36,5 @@ public class ProcessedReadings
         InvalidRecords++;
         //TotalLines++;
     }
-
-    public void Reset()
-    {
-        _readings.Clear();
-        TotalLines = 0;
-        DuplicatesRemoved = 0;
-        InvalidRecords = 0;
-    }
-
-    //public void Merge(ProcessedReadings other)
-    //{
-    //    foreach (var reading in other.Readings)
-    //    {
-    //        TryAddReading(reading);
-    //    }
-    //    TotalLines += other.TotalLines;
-    //    DuplicatesRemoved += other.DuplicatesRemoved;
-    //    InvalidRecords += other.InvalidRecords;
-    //}
+        
 }

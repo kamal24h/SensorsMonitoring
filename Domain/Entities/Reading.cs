@@ -46,17 +46,4 @@ public class Reading
         if (value < -1000 || value > 1000)
             throw new InvalidReadingException("Value out of range.");
     }
-
-    public bool IsDuplicate(Reading other)
-        => Id == other?.Id;
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is not Reading other)
-            return false;
-        return Id == other.Id;
-    }
-
-    public override int GetHashCode()
-        => Id.GetHashCode();
 }
