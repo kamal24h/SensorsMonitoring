@@ -7,6 +7,7 @@ namespace Infrastructure.Data
     public class SensorDbContext : DbContext
     {
         public DbSet<Reading> Readings { get; set; }
+        public DbSet<ProcessedStats> ProcessedStats { get; set; }
 
         public SensorDbContext(DbContextOptions<SensorDbContext> options) : base(options) { }
 
@@ -32,6 +33,16 @@ namespace Infrastructure.Data
 
                 entity.Property(x => x.Value)
                       .HasPrecision(18, 6);
+            });
+
+            modelBuilder.Entity<ProcessedStats>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalLines);
+                entity.Property(e => e.ReadingsStored);
+                entity.Property(e => e.DuplicatesRemoved);
+                entity.Property(e => e.InvalidRecords);
+                entity.Property(e => e.UpdatedAt);
             });
         }
     }

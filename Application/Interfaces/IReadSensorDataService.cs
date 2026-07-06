@@ -10,7 +10,7 @@ namespace Application.Interfaces
 
     public interface IReadSensorDataService
     {
-        Task ProcessFileAsync(string filePath, CancellationToken cancellationToken = default);
+        Task<ProcessedStatsDto> ProcessFileAsync(string filePath, CancellationToken cancellationToken = default);
         Task<IEnumerable<AggregationResultDto>> GetAggregatedDataAsync(
             string deviceId,
             string metric,
@@ -19,5 +19,6 @@ namespace Application.Interfaces
             int bucketSizeSeconds,
             CancellationToken cancellationToken = default);
         Task<ProcessedStatsDto> GetProcessedStatsAsync(CancellationToken cancellationToken = default);
+        Task ResetStatsAsync(CancellationToken cancellationToken = default);
     }
 }

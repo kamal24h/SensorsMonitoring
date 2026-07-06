@@ -10,9 +10,9 @@ public class ProcessedReadings
 
     public IReadOnlyCollection<Reading> Readings => _readings.AsReadOnly();
 
-    public int TotalLines { get; private set; }
-    public int DuplicatesRemoved { get; private set; }
-    public int InvalidRecords { get; private set; }
+    public int TotalLines { get; set; }
+    public int DuplicatesRemoved { get; set; }
+    public int InvalidRecords { get; set; }
 
     public bool TryAddReading(Reading reading)
     {
@@ -34,6 +34,25 @@ public class ProcessedReadings
     public void IncrementInvalidRecords()
     {
         InvalidRecords++;
-        TotalLines++;
+        //TotalLines++;
     }
+
+    public void Reset()
+    {
+        _readings.Clear();
+        TotalLines = 0;
+        DuplicatesRemoved = 0;
+        InvalidRecords = 0;
+    }
+
+    //public void Merge(ProcessedReadings other)
+    //{
+    //    foreach (var reading in other.Readings)
+    //    {
+    //        TryAddReading(reading);
+    //    }
+    //    TotalLines += other.TotalLines;
+    //    DuplicatesRemoved += other.DuplicatesRemoved;
+    //    InvalidRecords += other.InvalidRecords;
+    //}
 }

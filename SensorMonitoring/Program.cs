@@ -20,7 +20,11 @@ builder.Services.AddScoped<IReadSensorDataService, ReadSensorDataService>();
 
 // Database (InMemory)
 builder.Services.AddDbContext<SensorDbContext>(options =>
-    options.UseInMemoryDatabase("SensorReadingsDb"));
+{
+    options.UseInMemoryDatabase("SensorReadingsDb");
+    options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+    options.EnableDetailedErrors(builder.Environment.IsDevelopment());
+});
 
 // Logging
 builder.Logging.ClearProviders();

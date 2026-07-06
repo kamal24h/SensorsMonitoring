@@ -11,7 +11,9 @@ namespace Domain.Interfaces
             DateTime from,
             DateTime to,
             CancellationToken cancellationToken = default);
-        Task<ProcessedReadings> GetProcessedStatsAsync(CancellationToken cancellationToken = default);
+        Task<ProcessedStats> GetProcessedStatsAsync(CancellationToken cancellationToken = default);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+        Task ResetStatsAsync(CancellationToken cancellationToken = default);
+        Task<ProcessedStats> UpdateProcessingStats(ProcessedReadings processed);
     }
 }
