@@ -29,3 +29,9 @@ An Application for sensors data aggregation and monitoring reports
 2. **New Data Sources**: Implement new repository interfaces
 3. **New Validation Rules**: Extend domain validation logic
 
+### Tests
+
+
+### Unit Tests
+
+1. Unit test for testing the app for duplication prevent works properly.
