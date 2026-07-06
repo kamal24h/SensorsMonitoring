@@ -34,4 +34,8 @@ An Application for sensors data aggregation and monitoring reports
 
 ### Unit Tests
 
-1. Unit test for testing the app for duplication prevent works properly.
+1. Unit test for testing the app to check if duplication prevention works properly.
+2. Unit test for testing the app to check if aggregation works properly.
+3. Aggregation test is developed using Moq third-party library.
+
+
