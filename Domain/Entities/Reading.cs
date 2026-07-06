@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Domain.Exceptions;
+﻿using Domain.Exceptions;
 
 namespace Domain.Entities;
 public class Reading
@@ -44,5 +43,7 @@ public class Reading
         if (double.IsNaN(value) || double.IsInfinity(value))
             throw new InvalidReadingException("Invalid value.");
 
+        if (value < -1000 || value > 1000)
+            throw new InvalidReadingException("Value out of range.");
     }
 }

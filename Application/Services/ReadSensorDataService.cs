@@ -23,13 +23,9 @@ namespace Application.Services
             _logger.LogInformation("Starting file processing: {FilePath}", filePath);
 
             var processed = new ProcessedReadings();
-            //var lines = await File.ReadAllLinesAsync(filePath, cancellationToken);
-
+            
             await foreach (var line in File.ReadLinesAsync(filePath, cancellationToken))
             {
-
-            //    foreach (var line in lines)
-            //{
                 try
                 {
                     var dto = JsonSerializer.Deserialize<ReadingDto>(line);
