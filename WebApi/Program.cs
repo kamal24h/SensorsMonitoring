@@ -7,8 +7,8 @@ using Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
 
+// Add services
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -17,6 +17,7 @@ builder.Services.AddSwaggerGen();
 // Dependency Injection
 builder.Services.AddScoped<IReadSensorDataRepository, ReadSensorDataRepository>();
 builder.Services.AddScoped<IReadSensorDataService, ReadSensorDataService>();
+builder.Services.AddScoped<IAggregationStrategy, DefaultAggregationStrategy>();
 
 // Database (InMemory)
 builder.Services.AddDbContext<SensorDbContext>(options =>
@@ -44,14 +45,11 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed initial data
+// Ensure database creation
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<SensorDbContext>();
     dbContext.Database.EnsureCreated();
-
-    Console.WriteLine("dbContext string: ", dbContext.Model.ToDebugString());
-
 }
 
 app.Run();

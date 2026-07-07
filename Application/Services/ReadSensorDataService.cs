@@ -2,137 +2,166 @@
 using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Exceptions;
 using Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services
 {
-    public class ReadSensorDataService : IReadSensorDataService
+    public sealed class ReadSensorDataService : IReadSensorDataService
     {
-        private readonly IReadSensorDataRepository _repository;
-        private readonly ILogger<ReadSensorDataService> _logger;
+        private readonly IReadSensorDataRepository repository;
+        private readonly IAggregationStrategy aggregationStrategy;
+        private readonly ILogger<ReadSensorDataService> logger;
 
-        public ReadSensorDataService(IReadSensorDataRepository repository, ILogger<ReadSensorDataService> logger)
+        public ReadSensorDataService(IReadSensorDataRepository repository,
+            IAggregationStrategy aggregationStrategy,
+            ILogger<ReadSensorDataService> logger)
         {
-            _repository = repository;
-            _logger = logger;
+            this.repository = repository;
+            this.aggregationStrategy = aggregationStrategy;
+            this.logger = logger;
         }
 
-        public async Task<ProcessedStatsDto> ProcessFileAsync(string filePath, CancellationToken cancellationToken = default)
+        public async Task<ProcessedStatsDto> ProcessFileAsync( string filePath, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Starting file processing: {FilePath}", filePath);
+            logger.LogInformation("========== STARTING FILE PROCESSING ==========");
 
+            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+            
             if (!File.Exists(filePath))
+                throw new FileNotFoundException(filePath);
+
+            logger.LogInformation( "Processing file {File}", filePath);
+
+            var session = new ProcessedReadings();
+
+            try
             {
-                _logger.LogError("File not found: {FilePath}", filePath);
-                throw new FileNotFoundException($"File not found: {filePath}");
-            }
-
-            var processed = new ProcessedReadings();
-            var lines = await File.ReadAllLinesAsync(filePath, cancellationToken);
-
-            _logger.LogInformation("Total lines to process: {LineCount}", lines.Length);
-            
-            for (int i = 0; i < lines.Length; i++)
-            {
-                var line = lines[i];
-                if (string.IsNullOrWhiteSpace(line))
+                var lineIndex = 0;
+                foreach (var line in File.ReadLines(filePath))
                 {
-                    processed.IncrementInvalidRecords();
-                    _logger.LogWarning("Line {LineNumber}: Empty or whitespace line", i + 1);
-                    continue;
-                }
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                try
-                {
-                    var dto = JsonSerializer.Deserialize<ReadingDto>(line, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    lineIndex++;
+                    session.IncrementLine();
 
-                    if (dto == null)
+                    if (string.IsNullOrWhiteSpace(line))
                     {
-                        processed.IncrementInvalidRecords();
-                        _logger.LogWarning("Line {LineNumber}: Deserialization returned null", i + 1);
+                        session.IncrementInvalid();
                         continue;
                     }
 
-                    // اعتبارسنجی مقادیر
-                    if (string.IsNullOrEmpty(dto.DeviceId) || string.IsNullOrEmpty(dto.Metric))
-                    {
-                        processed.IncrementInvalidRecords();
-                        _logger.LogWarning("Line {LineNumber}: Missing DeviceId or Metric", i + 1);
-                        continue;
-                    }
+                    await ProcessLineAsync(line, session, lineIndex, cancellationToken);
+                }
 
-                    var reading = new Reading(
-                        dto.DeviceId,
-                        dto.Metric,
-                        dto.Timestamp,
-                        dto.Sequence,
-                        dto.Value
-                    );
+                await repository.SaveProcessingStatsAsync(
+                    new ProcessedStats(
+                        session.TotalLines,
+                        session.StoredReadings,
+                        session.DuplicatesRemoved,
+                        session.InvalidRecords),
+                    cancellationToken);
 
-                    var added = processed.TryAddReading(reading);
+                await repository.SaveChangesAsync(cancellationToken);
+                                
+                logger.LogInformation("========== FILE PROCESSING COMPLETED ==========");
+                logger.LogInformation("Statistics:");
+                logger.LogInformation("  Total Lines: {TotalLines}", session.TotalLines);
+                logger.LogInformation("  Readings Stored: {Stored}", session.StoredReadings);
+                logger.LogInformation("  Duplicates Removed: {Duplicates}", session.DuplicatesRemoved);
+                logger.LogInformation("  Invalid Records: {Invalid}", session.InvalidRecords);
+                logger.LogInformation("===============================================");
 
-                    if (added)
-                    {
-                        await _repository.AddAsync(reading, cancellationToken);
-                        if (processed.Readings.Count % 100 == 0)
-                        {
-                            _logger.LogDebug("Processed {Count} readings so far", processed.Readings.Count);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogDebug("Line {LineNumber}: Duplicate reading detected: {ReadingId}",
-                            i + 1, reading.Id);
-                    }
-                }
-                catch (JsonException ex)
+                return new ProcessedStatsDto
                 {
-                    processed.IncrementInvalidRecords();
-                    _logger.LogWarning(ex, "Line {LineNumber}: JSON parsing error: {Line}", i + 1, line);
-                }
-                catch (Domain.Exceptions.InvalidReadingException ex)
+                    TotalLines = session.TotalLines,
+                    ReadingsStored = session.StoredReadings,
+                    DuplicatesRemoved = session.DuplicatesRemoved,
+                    InvalidRecords = session.InvalidRecords
+                };
+
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogWarning("Import canceled.");
+                throw;
+            }
+        }
+
+        private async Task ProcessLineAsync( string line, ProcessedReadings session, int lineIndex, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var dto = JsonSerializer.Deserialize<ReadingDto>(line);
+
+                if (dto is null)
                 {
-                    processed.IncrementInvalidRecords();
-                    _logger.LogWarning(ex, "Line {LineNumber}: Invalid reading data", i + 1);
+                    session.IncrementInvalid();
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    processed.IncrementInvalidRecords();
-                    _logger.LogError(ex, "Line {LineNumber}: Unexpected error processing line", i + 1);
-                }
+
+                var reading = new Reading( dto.DeviceId, dto.Metric, dto.Timestamp, dto.Sequence, dto.Value);
+
+                if (!session.Register(reading))
+                    return;
+
+                await repository.AddAsync(reading, cancellationToken);
+            }
+            catch (JsonException ex)
+            {
+                logger.LogWarning(ex, "Line {lineIndex}: Invalid json!", lineIndex);
+                session.IncrementInvalid();
+            }
+            catch (InvalidReadingException ex)
+            {
+                logger.LogWarning( ex, "Line {lineIndex}: Invalid reading!", lineIndex);
+                session.IncrementInvalid();
+            }
+        }
+
+        public async Task<IEnumerable<AggregationResultDto>> GetAggregatedDataAsync(string deviceId, string metric,
+            DateTime from, DateTime to, int bucketSizeSeconds, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(metric);
+
+            if (from >= to)
+                throw new ArgumentException("'from' must be before 'to'.");
+
+            if (bucketSizeSeconds <= 0)
+                throw new ArgumentOutOfRangeException(nameof(bucketSizeSeconds), "Bucket size must be greater than zero.");
+
+            logger.LogInformation("Aggregating readings for Device:{DeviceId}, Metric:{Metric}", deviceId, metric);
+
+            var readings = (await repository.GetByDeviceAndMetricAsync(deviceId, metric, from, to, cancellationToken)).ToList();
+
+            if (readings.Count == 0)
+            {
+                logger.LogInformation("No readings found.");
+                return Enumerable.Empty<AggregationResultDto>();
             }
 
-            // ذخیره تغییرات در دیتابیس
-            await _repository.SaveChangesAsync(cancellationToken);
+            var result = readings
+                .GroupBy(r => GetBucketStart(r.Timestamp, from, bucketSizeSeconds))
+                .OrderBy(g => g.Key)
+                .Select(g =>
+                    aggregationStrategy.Calculate(
+                        g.Key,
+                        g.ToList()))
+                .ToList();
 
-            // به‌روزرسانی آمار
-            var updateResult = await _repository.UpdateProcessingStats(processed);
-            var result = new ProcessedStatsDto()
-            {
-                TotalLines = (updateResult.TotalLines != 0)? updateResult.TotalLines : processed.TotalLines,
-                ReadingsStored = (updateResult.ReadingsStored != 0) ? updateResult.ReadingsStored : processed.Readings.Count,
-                DuplicatesRemoved = (updateResult.DuplicatesRemoved != 0) ? updateResult.DuplicatesRemoved : processed.DuplicatesRemoved,
-                InvalidRecords = (updateResult.InvalidRecords != 0) ? updateResult.InvalidRecords : processed.InvalidRecords
-            };
-            
+            logger.LogInformation("Aggregation completed. Buckets:{BucketCount}", result.Count);
+
             return result;
         }
 
-        public async Task<IEnumerable<AggregationResultDto>> GetAggregatedDataAsync(
-            string deviceId,
-            string metric,
-            DateTime from,
-            DateTime to,
-            int bucketSizeSeconds,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<AggregationResultDto>> GetAggregatedDataAsync1(string deviceId, string metric, DateTime from, DateTime to,
+            int bucketSizeSeconds, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Getting aggregated data for Device: {DeviceId}, Metric: {Metric}",
+            logger.LogInformation("Getting aggregated data for Device: {DeviceId}, Metric: {Metric}",
                 deviceId, metric);
-            _logger.LogDebug("Time range: {From} to {To}, Bucket size: {BucketSize}s",
+            logger.LogDebug("Time range: {From} to {To}, Bucket size: {BucketSize}s",
                 from, to, bucketSizeSeconds);
 
             // اعتبارسنجی
@@ -148,51 +177,40 @@ namespace Application.Services
             if (bucketSizeSeconds <= 0)
                 throw new ArgumentException("Bucket size must be greater than 0");
 
-            var readings = await _repository.GetByDeviceAndMetricAsync(
-                deviceId, metric, from, to, cancellationToken);
+            var readings = await repository.GetByDeviceAndMetricAsync(deviceId, metric, from, to, cancellationToken);
 
             if (!readings.Any())
             {
-                _logger.LogInformation("No readings found for the specified criteria");
+                logger.LogInformation("No readings found for the specified criteria");
                 return [];
             }
 
-            _logger.LogInformation("Found {Count} readings for aggregation", readings.Count());
+            logger.LogInformation("Found {Count} readings for aggregation", readings.Count());
 
             // گروه‌بندی بر اساس بازه زمانی
             var grouped = readings
-                .GroupBy(r => GetBucketStart(r.Id.Timestamp, from, bucketSizeSeconds))
-                .Select(g => new AggregationResultDto
-                {
-                    BucketStart = g.Key,
-                    Count = g.Count(),
-                    Average = Math.Round(g.Average(r => r.Value), 2),
-                    Minimum = Math.Round(g.Min(r => r.Value), 2),
-                    Maximum = Math.Round(g.Max(r => r.Value), 2)
-                })
-                .OrderBy(r => r.BucketStart)
+                .GroupBy(r => GetBucketStart(r.Timestamp, from, bucketSizeSeconds))
+                .OrderBy(g => g.Key)
+                .Select(g => AggregationCalculator.Calculate(g.Key, g))
                 .ToList();
 
-            _logger.LogInformation("Aggregation completed with {BucketCount} buckets", grouped.Count);
+            logger.LogInformation("Aggregation completed with {BucketCount} buckets", grouped.Count);
             return grouped;
         }
 
-        public async Task<ProcessedStatsDto> GetProcessedStatsAsync(CancellationToken cancellationToken = default)
+        private static DateTime GetBucketStart(DateTime timestamp, DateTime from, int bucketSizeSeconds)
         {
-            _logger.LogInformation("Getting processing statistics");
-            var stats = await _repository.GetProcessedStatsAsync(cancellationToken);
+            var bucket = TimeSpan.FromSeconds(bucketSizeSeconds);
+            var bucketIndex = (timestamp - from).Ticks / bucket.Ticks;
+            return from.AddTicks(bucketIndex * bucket.Ticks);
+        }
 
-            if (stats == null)
-            {
-                _logger.LogWarning("No statistics available");
-                return new ProcessedStatsDto
-                {
-                    TotalLines = 0,
-                    ReadingsStored = 0,
-                    DuplicatesRemoved = 0,
-                    InvalidRecords = 0
-                };
-            }
+        public async Task<ProcessedStatsDto> GetProcessedStatsAsync( CancellationToken cancellationToken = default)
+        {
+            var stats = await repository.GetProcessedStatsAsync(cancellationToken);
+
+            if (stats is null)
+                return new ProcessedStatsDto();
 
             return new ProcessedStatsDto
             {
@@ -203,20 +221,43 @@ namespace Application.Services
             };
         }
 
-        private static DateTime GetBucketStart(DateTime timestamp, DateTime rangeStart, int bucketSizeSeconds)
+        public Task ResetStatsAsync( CancellationToken cancellationToken = default)
         {
-            var elapsed = (timestamp - rangeStart).TotalSeconds;
-            var bucketIndex = (int)(elapsed / bucketSizeSeconds);
-            return rangeStart.AddSeconds(bucketIndex * bucketSizeSeconds);
+            return repository.ResetAsync( cancellationToken);
         }
 
-        public async Task ResetStatsAsync(CancellationToken cancellationToken = default)
+        internal static class AggregationCalculator
         {
-            _logger.LogInformation("Resetting statistics");
-            await _repository.ResetStatsAsync(cancellationToken);
-            _logger.LogInformation("Statistics reset completed");
+            public static AggregationResultDto Calculate(DateTime bucketStart, IEnumerable<Reading> readings)
+            {
+                var count = 0;
+                var sum = 0d;
+                var min = double.MaxValue;
+                var max = double.MinValue;
+
+                foreach (var reading in readings)
+                {
+                    count++;
+
+                    sum += reading.Value;
+
+                    if (reading.Value < min)
+                        min = reading.Value;
+
+                    if (reading.Value > max)
+                        max = reading.Value;
+                }
+
+                return new AggregationResultDto
+                {
+                    BucketStart = bucketStart,
+                    Count = count,
+                    Average = Math.Round(sum / count, 2),
+                    Minimum = Math.Round(min, 2),
+                    Maximum = Math.Round(max, 2)
+                };
+            }
         }
 
     }
 }
-

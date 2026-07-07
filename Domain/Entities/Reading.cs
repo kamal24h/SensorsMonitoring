@@ -1,4 +1,5 @@
-﻿using Domain.Exceptions;
+﻿using System.Diagnostics;
+using Domain.Exceptions;
 
 namespace Domain.Entities;
 public class Reading
@@ -45,5 +46,6 @@ public class Reading
 
         if (value < -1000 || value > 1000)
             throw new InvalidReadingException("Value out of range.");
+
     }
 }

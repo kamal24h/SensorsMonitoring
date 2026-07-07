@@ -1,40 +1,35 @@
-﻿namespace Domain.Entities;
-
-public class ProcessedReadings
+﻿
+namespace Domain.Entities
 {
-    // برای تشخیص رکوردهای تکراری
-    private readonly HashSet<ReadingIdentity> _identities = [];
-
-    // برای نگهداری رکوردهای معتبر
-    private readonly List<Reading> _readings = [];
-
-    public IReadOnlyCollection<Reading> Readings => _readings.AsReadOnly();
-
-    public int TotalLines { get; set; }
-    public int DuplicatesRemoved { get; set; }
-    public int InvalidRecords { get; set; }
-
-    public bool TryAddReading(Reading reading)
+    public sealed class ProcessedReadings
     {
-        ArgumentNullException.ThrowIfNull(reading);
+        private readonly HashSet<ReadingIdentity> _identities = [];
 
-        TotalLines++;
+        public int TotalLines { get; private set; }
 
-        // دستور HashSet.Add اگر قبلاً وجود داشته باشد false برمی‌گرداند 
-        if (!_identities.Add(reading.Id))
+        public int StoredReadings { get; private set; }
+
+        public int InvalidRecords { get; private set; }
+
+        public int DuplicatesRemoved { get; private set; }
+
+        public void IncrementLine()
+            => TotalLines++;
+
+        public void IncrementInvalid()
+            => InvalidRecords++;
+
+        public bool Register(Reading reading)
         {
-            DuplicatesRemoved++;
-            return false;
+            if (!_identities.Add(reading.Id))
+            {
+                DuplicatesRemoved++;
+                return false;
+            }
+
+            StoredReadings++;
+
+            return true;
         }
-
-        _readings.Add(reading);
-        return true;
     }
-
-    public void IncrementInvalidRecords()
-    {
-        InvalidRecords++;
-        //TotalLines++;
-    }
-        
 }
