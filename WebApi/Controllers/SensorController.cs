@@ -10,18 +10,22 @@ public class SensorController : ControllerBase
 {
     private readonly IReadSensorDataService _readingService;
     private readonly ILogger<SensorController> _logger;
-    private readonly string defaultFilePath = "./Resources/readings.jsonl";
+    private readonly IConfiguration _configuration;
 
-    public SensorController(IReadSensorDataService readingService, ILogger<SensorController> logger)
+    public SensorController(IReadSensorDataService readingService,
+        IConfiguration configuration,
+        ILogger<SensorController> logger)
     {
         _readingService = readingService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost("process")]
     public async Task<IActionResult> ProcessFile([FromQuery] string? filePath)
     {
-        filePath ??= defaultFilePath;
+        var path = _configuration["SensorDataFile"];
+        filePath ??= path;
         try
         {
             _logger.LogInformation("Processing request for file: {FilePath}", filePath);
