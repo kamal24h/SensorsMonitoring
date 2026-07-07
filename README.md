@@ -9,7 +9,7 @@ This project was developed as a solution for a backend technical assessment. The
 ## Features
 
 * Import sensor readings from a JSON Lines (`.jsonl`) file
-* Stream file processing with low memory usage
+* Process file reading with low memory usage
 * Domain-level validation
 * Duplicate detection using composite identity
 * Persistent storage using Entity Framework Core
